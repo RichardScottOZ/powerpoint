@@ -431,11 +431,11 @@ class PPTXGenerator:
         font_scheme = ET.SubElement(theme_elements, f"{{{self.NS['a']}}}fontScheme",
                                    name="Office")
         major_font = ET.SubElement(font_scheme, f"{{{self.NS['a']}}}majorFont")
-        latin = ET.SubElement(major_font, f"{{{self.NS['a']}}}latin",
+        major_latin = ET.SubElement(major_font, f"{{{self.NS['a']}}}latin",
                              typeface="Calibri Light")
         
         minor_font = ET.SubElement(font_scheme, f"{{{self.NS['a']}}}minorFont")
-        latin = ET.SubElement(minor_font, f"{{{self.NS['a']}}}latin",
+        minor_latin = ET.SubElement(minor_font, f"{{{self.NS['a']}}}latin",
                              typeface="Calibri")
         
         # Format scheme (simplified)
