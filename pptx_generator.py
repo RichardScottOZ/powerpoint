@@ -88,6 +88,14 @@ class PPTXGenerator:
              'application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml'),
             ('/ppt/theme/theme1.xml',
              'application/vnd.openxmlformats-officedocument.theme+xml'),
+            ('/ppt/viewProps.xml',
+             'application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml'),
+            ('/ppt/presProps.xml',
+             'application/vnd.openxmlformats-officedocument.presentationml.presProps+xml'),
+            ('/docProps/core.xml',
+             'application/vnd.openxmlformats-package.core-properties+xml'),
+            ('/docProps/app.xml',
+             'application/vnd.openxmlformats-officedocument.extended-properties+xml'),
         ]
         
         # Add overrides for each slide
@@ -106,7 +114,7 @@ class PPTXGenerator:
     def _create_rels_xml(self) -> bytes:
         """
         Create _rels/.rels - defines package-level relationships.
-        Points to the main presentation.xml file.
+        Points to the main presentation.xml file and document properties.
         """
         root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
         
@@ -114,6 +122,16 @@ class PPTXGenerator:
                      Id="rId1",
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
                      Target="ppt/presentation.xml")
+        
+        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
+                     Id="rId2",
+                     Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+                     Target="docProps/core.xml")
+        
+        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
+                     Id="rId3",
+                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+                     Target="docProps/app.xml")
         
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
     
@@ -168,6 +186,18 @@ class PPTXGenerator:
                          Id=f"rId{i + 1}",
                          Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
                          Target=f"slides/slide{i}.xml")
+        
+        # Relationships to view and presentation properties
+        next_id = len(self.slides) + 2
+        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
+                     Id=f"rId{next_id}",
+                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps",
+                     Target="viewProps.xml")
+        
+        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
+                     Id=f"rId{next_id + 1}",
+                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
+                     Target="presProps.xml")
         
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
     
@@ -461,6 +491,91 @@ class PPTXGenerator:
         
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
     
+    def _create_app_properties_xml(self) -> bytes:
+        """
+        Create docProps/app.xml - application properties.
+        Required by PowerPoint for proper compatibility.
+        """
+        root = ET.Element("Properties",
+                         attrib={
+                             'xmlns': 'http://schemas.openxmlformats.org/officeDocument/2006/extended-properties',
+                             'xmlns:vt': 'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes'
+                         })
+        
+        ET.SubElement(root, "TotalTime").text = "0"
+        ET.SubElement(root, "Words").text = "0"
+        ET.SubElement(root, "Application").text = "Python PPTX Generator"
+        ET.SubElement(root, "PresentationFormat").text = "On-screen Show (4:3)"
+        ET.SubElement(root, "Paragraphs").text = "0"
+        ET.SubElement(root, "Slides").text = str(len(self.slides))
+        ET.SubElement(root, "Notes").text = "0"
+        ET.SubElement(root, "HiddenSlides").text = "0"
+        ET.SubElement(root, "MMClips").text = "0"
+        ET.SubElement(root, "ScaleCrop").text = "false"
+        ET.SubElement(root, "Company").text = ""
+        ET.SubElement(root, "LinksUpToDate").text = "false"
+        ET.SubElement(root, "SharedDoc").text = "false"
+        ET.SubElement(root, "HyperlinksChanged").text = "false"
+        ET.SubElement(root, "AppVersion").text = "16.0000"
+        
+        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
+    def _create_core_properties_xml(self) -> bytes:
+        """
+        Create docProps/core.xml - core document properties.
+        Required for proper document metadata.
+        """
+        from datetime import datetime
+        
+        root = ET.Element("cp:coreProperties",
+                         attrib={
+                             'xmlns:cp': 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties',
+                             'xmlns:dc': 'http://purl.org/dc/elements/1.1/',
+                             'xmlns:dcterms': 'http://purl.org/dc/terms/',
+                             'xmlns:dcmitype': 'http://purl.org/dc/dcmitype/',
+                             'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance'
+                         })
+        
+        ET.SubElement(root, "dc:title").text = "Presentation"
+        ET.SubElement(root, "dc:creator").text = "Python PPTX Generator"
+        ET.SubElement(root, "cp:lastModifiedBy").text = "Python PPTX Generator"
+        ET.SubElement(root, "cp:revision").text = "1"
+        
+        # Add timestamps
+        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        created = ET.SubElement(root, "dcterms:created",
+                               attrib={'xsi:type': 'dcterms:W3CDTF'})
+        created.text = now
+        modified = ET.SubElement(root, "dcterms:modified",
+                                attrib={'xsi:type': 'dcterms:W3CDTF'})
+        modified.text = now
+        
+        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
+    def _create_view_props_xml(self) -> bytes:
+        """
+        Create ppt/viewProps.xml - view properties.
+        """
+        root = ET.Element(f"{{{self.NS['p']}}}viewPr")
+        
+        normal_view_pr = ET.SubElement(root, f"{{{self.NS['p']}}}normalViewPr")
+        restored_left = ET.SubElement(normal_view_pr, f"{{{self.NS['p']}}}restoredLeft",
+                                     sz="15620")
+        restored_top = ET.SubElement(normal_view_pr, f"{{{self.NS['p']}}}restoredTop",
+                                    sz="94660")
+        
+        grid_spacing = ET.SubElement(root, f"{{{self.NS['p']}}}gridSpacing",
+                                    cx="72008", cy="72008")
+        
+        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
+    def _create_pres_props_xml(self) -> bytes:
+        """
+        Create ppt/presProps.xml - presentation properties.
+        """
+        root = ET.Element(f"{{{self.NS['p']}}}presentationPr")
+        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
     def add_slide(self, shapes: List[Dict[str, Any]]) -> None:
         """
         Add a slide with the specified shapes.
@@ -612,6 +727,18 @@ class PPTXGenerator:
             
             # ppt/theme/theme1.xml
             zf.writestr('ppt/theme/theme1.xml', self._create_theme_xml())
+            
+            # ppt/viewProps.xml
+            zf.writestr('ppt/viewProps.xml', self._create_view_props_xml())
+            
+            # ppt/presProps.xml
+            zf.writestr('ppt/presProps.xml', self._create_pres_props_xml())
+            
+            # docProps/core.xml
+            zf.writestr('docProps/core.xml', self._create_core_properties_xml())
+            
+            # docProps/app.xml
+            zf.writestr('docProps/app.xml', self._create_app_properties_xml())
         
         print(f"✓ PowerPoint created: {filename}")
         print(f"  - {len(self.slides)} slides")
