@@ -180,6 +180,31 @@ This creates 4 presentations:
 - `comic_analysis_data_insights.pptx` - Data analysis insights (5 slides)
 - `comic_analysis_getting_started.pptx` - Getting started guide (6 slides)
 
+## Testing
+
+Run the comprehensive test suite to validate the Comic-Analysis presentations:
+
+```bash
+python run_tests.py
+```
+
+Or run tests directly:
+
+```bash
+python test_comic_analysis.py
+```
+
+The test suite includes:
+- **23 tests** covering all Comic-Analysis presentations
+- Validates PPTX file structure (ZIP archives with XML)
+- Checks slide counts and content
+- Verifies XML validity and namespace correctness
+- Tests the core PPTXGenerator functionality
+
+Test coverage:
+- `TestComicAnalysisPresentations`: 20 tests for the 4 Comic-Analysis presentations
+- `TestPPTXGenerator`: 3 tests for the core generator
+
 ## Project Structure
 
 ```
@@ -187,6 +212,9 @@ powerpoint/
 ├── pptx_generator.py           # Core XML-based generator (700+ lines)
 ├── comic_analysis_presenter.py # Comic-Analysis presentations
 ├── example.py                  # Simple example
+├── test_comic_analysis.py      # Comprehensive test suite (23 tests)
+├── run_tests.py                # Test runner script
+├── XML_STRUCTURE.md            # Detailed XML documentation
 └── README.md                   # This file
 ```
 
