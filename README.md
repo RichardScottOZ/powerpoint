@@ -2,6 +2,19 @@
 
 A PowerPoint (.pptx) generator built **completely from scratch** using only Python's standard library. No external dependencies required - creates presentations by directly building the XML structure that comprises PowerPoint Open XML files.
 
+## 📥 Example Presentations
+
+**Download and verify the generated presentations!**
+
+See [`EXAMPLES.md`](EXAMPLES.md) for links to example PowerPoint files you can download:
+- [`simple_example.pptx`](examples/simple_example.pptx) - Basic 3-slide demonstration
+- [`comic_analysis_overview.pptx`](examples/comic_analysis_overview.pptx) - 5-slide overview
+- [`comic_analysis_technical.pptx`](examples/comic_analysis_technical.pptx) - 6-slide technical deep dive
+- [`comic_analysis_data_insights.pptx`](examples/comic_analysis_data_insights.pptx) - 5-slide data analysis
+- [`comic_analysis_getting_started.pptx`](examples/comic_analysis_getting_started.pptx) - 6-slide getting started guide
+
+All files open in Microsoft PowerPoint, LibreOffice Impress, Google Slides, and Apple Keynote.
+
 ## Overview
 
 This project demonstrates how PowerPoint files work at the XML level and provides a functional generator that creates valid .pptx files by:
