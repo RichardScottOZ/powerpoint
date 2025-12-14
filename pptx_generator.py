@@ -92,6 +92,8 @@ class PPTXGenerator:
              'application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml'),
             ('/ppt/presProps.xml',
              'application/vnd.openxmlformats-officedocument.presentationml.presProps+xml'),
+            ('/ppt/tableStyles.xml',
+             'application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml'),
             ('/docProps/core.xml',
              'application/vnd.openxmlformats-package.core-properties+xml'),
             ('/docProps/app.xml',
@@ -140,13 +142,19 @@ class PPTXGenerator:
         Create ppt/presentation.xml - main presentation structure.
         Defines slide size, slide IDs, and references to slides.
         """
-        root = ET.Element(f"{{{self.NS['p']}}}presentation")
+        root = ET.Element(f"{{{self.NS['p']}}}presentation",
+                         attrib={
+                             'saveSubsetFonts': '1',
+                             'autoCompressPictures': '0'
+                         })
         
         # Slide master ID list
         sld_master_id_lst = ET.SubElement(root, f"{{{self.NS['p']}}}sldMasterIdLst")
         ET.SubElement(sld_master_id_lst, f"{{{self.NS['p']}}}sldMasterId",
-                     id="2147483648",
-                     attrib={f"{{{self.NS['r']}}}id": "rId1"})
+                     attrib={
+                         'id': '2147483648',
+                         f"{{{self.NS['r']}}}id": 'rId1'
+                     })
         
         # Slide ID list - references all slides
         sld_id_lst = ET.SubElement(root, f"{{{self.NS['p']}}}sldIdLst")
@@ -157,15 +165,62 @@ class PPTXGenerator:
                              f"{{{self.NS['r']}}}id": f"rId{i + 1}"
                          })
         
-        # Slide size
+        # Slide size with type attribute
         sld_sz = ET.SubElement(root, f"{{{self.NS['p']}}}sldSz",
-                              cx=str(self.width), cy=str(self.height))
+                              attrib={
+                                  'cx': str(self.width),
+                                  'cy': str(self.height),
+                                  'type': 'screen4x3'
+                              })
         
         # Notes size
         notes_sz = ET.SubElement(root, f"{{{self.NS['p']}}}notesSz",
-                                cx=str(self.width), cy=str(self.height))
+                                attrib={
+                                    'cx': str(self.width),
+                                    'cy': str(self.height)
+                                })
+        
+        # Default text style (REQUIRED by PowerPoint)
+        self._add_default_text_style(root)
         
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
+    def _add_default_text_style(self, parent):
+        """
+        Add defaultTextStyle element with multiple paragraph levels.
+        This is required by PowerPoint for proper text rendering.
+        """
+        def_text_style = ET.SubElement(parent, f"{{{self.NS['p']}}}defaultTextStyle")
+        
+        # Default paragraph properties
+        def_ppr = ET.SubElement(def_text_style, f"{{{self.NS['a']}}}defPPr")
+        def_rpr = ET.SubElement(def_ppr, f"{{{self.NS['a']}}}defRPr", lang="en-US")
+        
+        # Define 9 paragraph levels
+        margins = [0, 457200, 914400, 1371600, 1828800, 2286000, 2743200, 3200400, 3657600]
+        for level_num, margin in enumerate(margins, 1):
+            lvl_ppr = ET.SubElement(def_text_style, f"{{{self.NS['a']}}}lvl{level_num}pPr",
+                                   attrib={
+                                       'marL': str(margin),
+                                       'algn': 'l',
+                                       'defTabSz': '457200',
+                                       'rtl': '0',
+                                       'eaLnBrk': '1',
+                                       'latinLnBrk': '0',
+                                       'hangingPunct': '1'
+                                   })
+            
+            lvl_def_rpr = ET.SubElement(lvl_ppr, f"{{{self.NS['a']}}}defRPr",
+                                       attrib={'sz': '1800', 'kern': '1200'})
+            
+            # Solid fill with scheme color
+            solid_fill = ET.SubElement(lvl_def_rpr, f"{{{self.NS['a']}}}solidFill")
+            ET.SubElement(solid_fill, f"{{{self.NS['a']}}}schemeClr", val='tx1')
+            
+            # Font typefaces
+            ET.SubElement(lvl_def_rpr, f"{{{self.NS['a']}}}latin", typeface='+mn-lt')
+            ET.SubElement(lvl_def_rpr, f"{{{self.NS['a']}}}ea", typeface='+mn-ea')
+            ET.SubElement(lvl_def_rpr, f"{{{self.NS['a']}}}cs", typeface='+mn-cs')
     
     def _create_presentation_rels_xml(self) -> bytes:
         """
@@ -198,6 +253,11 @@ class PPTXGenerator:
                      Id=f"rId{next_id + 1}",
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps",
                      Target="presProps.xml")
+        
+        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
+                     Id=f"rId{next_id + 2}",
+                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+                     Target="tableStyles.xml")
         
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
     
@@ -576,6 +636,17 @@ class PPTXGenerator:
         root = ET.Element(f"{{{self.NS['p']}}}presentationPr")
         return ET.tostring(root, encoding='utf-8', xml_declaration=True)
     
+    def _create_table_styles_xml(self) -> bytes:
+        """
+        Create ppt/tableStyles.xml - table style definitions.
+        Required by PowerPoint even if no tables are used.
+        """
+        root = ET.Element(f"{{{self.NS['a']}}}tblStyleLst",
+                         attrib={
+                             'def': '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}'
+                         })
+        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    
     def add_slide(self, shapes: List[Dict[str, Any]]) -> None:
         """
         Add a slide with the specified shapes.
@@ -733,6 +804,9 @@ class PPTXGenerator:
             
             # ppt/presProps.xml
             zf.writestr('ppt/presProps.xml', self._create_pres_props_xml())
+            
+            # ppt/tableStyles.xml
+            zf.writestr('ppt/tableStyles.xml', self._create_table_styles_xml())
             
             # docProps/core.xml
             zf.writestr('docProps/core.xml', self._create_core_properties_xml())
