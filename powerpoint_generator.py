@@ -165,15 +165,17 @@ class PowerPointGenerator:
         p.font.size = Pt(font_size)
         p.font.bold = True
     
-    def save(self, filename: str) -> None:
+    def save(self, filename: str, verbose: bool = True) -> None:
         """
         Save the presentation to a file.
         
         Args:
             filename: Output filename (should end with .pptx)
+            verbose: Whether to print a confirmation message (default: True)
         """
         self.prs.save(filename)
-        print(f"Presentation saved as: {filename}")
+        if verbose:
+            print(f"Presentation saved as: {filename}")
 
 
 def create_simple_presentation(title: str, slides_data: List[Dict[str, Any]], 
