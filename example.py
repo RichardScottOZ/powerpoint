@@ -1,94 +1,90 @@
 """
-Simple example demonstrating the PowerPoint Generator.
+Example demonstrating the from-scratch PowerPoint generator.
 
-This script creates a basic presentation to show how to use the library.
+This shows how to create presentations by building XML elements directly.
 """
 
-from powerpoint_generator import PowerPointGenerator
+from pptx_generator import PPTXGenerator
 
 
-def create_example_presentation():
+def create_simple_example():
     """Create a simple example presentation."""
-    ppt = PowerPointGenerator()
+    ppt = PPTXGenerator()
     
     # Title slide
     ppt.add_title_slide(
-        "PowerPoint Generator Demo",
-        "A Simple Example Presentation"
+        "From-Scratch PowerPoint Generator",
+        "Built using XML and Python standard library"
     )
     
-    # Introduction
+    # About slide
     ppt.add_content_slide(
-        "Welcome",
+        "About This Generator",
         [
-            "This is an example presentation",
-            "Created using the PowerPoint Generator library",
-            "It demonstrates basic functionality",
-            "You can create presentations programmatically"
+            "Creates .pptx files by building XML structure directly",
+            "No external libraries like python-pptx needed",
+            "Uses Python's zipfile and xml.etree modules only",
+            "Full control over PowerPoint Open XML format",
+            "Educational and practical"
         ]
     )
     
-    # Section header
-    ppt.add_section_header("Features", "What you can do")
-    
-    # Feature list
+    # How it works
     ppt.add_content_slide(
-        "Available Slide Types",
+        "How It Works",
+        [
+            "PowerPoint files are ZIP archives containing XML",
+            "Generates [Content_Types].xml for file definitions",
+            "Creates presentation.xml for structure",
+            "Builds individual slide XML files",
+            "Includes themes, layouts, and relationships"
+        ]
+    )
+    
+    # XML structure
+    ppt.add_content_slide(
+        "PowerPoint XML Structure",
+        [
+            "[Content_Types].xml: MIME type definitions",
+            "ppt/presentation.xml: Main presentation",
+            "ppt/slides/slide*.xml: Individual slides",
+            "ppt/slideLayouts/: Layout templates",
+            "ppt/slideMasters/: Master templates",
+            "ppt/theme/: Theme definitions"
+        ]
+    )
+    
+    # Features
+    ppt.add_content_slide(
+        "Current Features",
         [
             "Title slides with subtitles",
             "Content slides with bullet points",
-            "Section headers",
-            "Two-column layouts",
-            "Blank slides with custom text"
+            "Custom positioning and sizing",
+            "Font size and color control",
+            "Text alignment options",
+            "Bold text support"
         ]
     )
     
-    # Two-column example
-    ppt.add_two_column_slide(
-        "Two-Column Layout Example",
-        [
-            "Left Column:",
-            "• Easy to use",
-            "• Flexible design",
-            "• Python-based",
-            "• Open source"
-        ],
-        [
-            "Right Column:",
-            "• Multiple layouts",
-            "• Customizable",
-            "• Well-documented",
-            "• Active development"
-        ]
-    )
-    
-    # Benefits
+    # Usage
     ppt.add_content_slide(
-        "Benefits",
+        "Usage Example",
         [
-            "Automate presentation creation",
-            "Consistent formatting",
-            "Easy to maintain and update",
-            "Version control friendly",
-            "Integrate with data pipelines"
-        ]
-    )
-    
-    # Final slide
-    ppt.add_content_slide(
-        "Get Started",
-        [
-            "Install: pip install -r requirements.txt",
-            "Import: from powerpoint_generator import PowerPointGenerator",
-            "Create: ppt = PowerPointGenerator()",
-            "Add slides: ppt.add_title_slide(...)",
-            "Save: ppt.save('presentation.pptx')"
+            "from pptx_generator import PPTXGenerator",
+            "ppt = PPTXGenerator()",
+            "ppt.add_title_slide('Title', 'Subtitle')",
+            "ppt.add_content_slide('Topic', ['Point 1', 'Point 2'])",
+            "ppt.save('output.pptx')"
         ]
     )
     
     ppt.save("example_presentation.pptx")
-    print("Example presentation created: example_presentation.pptx")
 
 
 if __name__ == "__main__":
-    create_example_presentation()
+    print("Creating example presentation using from-scratch XML generator...")
+    print()
+    create_simple_example()
+    print()
+    print("Done! Open example_presentation.pptx to view the result.")
