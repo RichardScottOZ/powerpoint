@@ -62,6 +62,30 @@ class PPTXGenerator:
         for prefix, uri in self.NS.items():
             ET.register_namespace(prefix, uri)
     
+    def _serialize_xml(self, root: ET.Element) -> bytes:
+        """
+        Serialize an XML element to bytes with proper XML declaration.
+        
+        PowerPoint requires XML declarations with:
+        - UTF-8 encoding (uppercase)
+        - standalone="yes" attribute
+        
+        Args:
+            root: The root XML element to serialize
+            
+        Returns:
+            bytes: XML content with proper declaration
+        """
+        # Generate XML with ElementTree
+        xml_bytes = ET.tostring(root, encoding='utf-8', xml_declaration=False)
+        xml_str = xml_bytes.decode('utf-8')
+        
+        # Add proper XML declaration
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        full_xml = declaration + xml_str
+        
+        return full_xml.encode('utf-8')
+    
     def _create_content_types_xml(self) -> bytes:
         """
         Create [Content_Types].xml - defines MIME types for all parts.
@@ -111,7 +135,7 @@ class PPTXGenerator:
             ET.SubElement(root, f"{{{self.NS['ct']}}}Override",
                          PartName=part_name, ContentType=content_type)
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_rels_xml(self) -> bytes:
         """
@@ -135,7 +159,7 @@ class PPTXGenerator:
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
                      Target="docProps/app.xml")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_presentation_xml(self) -> bytes:
         """
@@ -183,7 +207,7 @@ class PPTXGenerator:
         # Default text style (REQUIRED by PowerPoint)
         self._add_default_text_style(root)
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _add_default_text_style(self, parent):
         """
@@ -259,7 +283,7 @@ class PPTXGenerator:
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
                      Target="tableStyles.xml")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_slide_xml(self, slide_data: Dict[str, Any]) -> bytes:
         """
@@ -298,7 +322,7 @@ class PPTXGenerator:
         clr_map_ovr = ET.SubElement(root, f"{{{self.NS['p']}}}clrMapOvr")
         master_clr_mapping = ET.SubElement(clr_map_ovr, f"{{{self.NS['a']}}}masterClrMapping")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_shape_xml(self, shape: Dict[str, Any], shape_id: int) -> ET.Element:
         """
@@ -379,7 +403,7 @@ class PPTXGenerator:
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
                      Target="../slideLayouts/slideLayout1.xml")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_slide_layout_xml(self) -> bytes:
         """
@@ -415,7 +439,7 @@ class PPTXGenerator:
         clr_map_ovr = ET.SubElement(root, f"{{{self.NS['p']}}}clrMapOvr")
         master_clr_mapping = ET.SubElement(clr_map_ovr, f"{{{self.NS['a']}}}masterClrMapping")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_slide_layout_rels_xml(self) -> bytes:
         """
@@ -428,7 +452,7 @@ class PPTXGenerator:
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
                      Target="../slideMasters/slideMaster1.xml")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_slide_master_xml(self) -> bytes:
         """
@@ -468,7 +492,7 @@ class PPTXGenerator:
                      id="2147483649",
                      attrib={f"{{{self.NS['r']}}}id": "rId1"})
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_slide_master_rels_xml(self) -> bytes:
         """
@@ -486,7 +510,7 @@ class PPTXGenerator:
                      Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
                      Target="../theme/theme1.xml")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_theme_xml(self) -> bytes:
         """
@@ -549,7 +573,7 @@ class PPTXGenerator:
         scheme_clr = ET.SubElement(solid_fill, f"{{{self.NS['a']}}}schemeClr",
                                   val="phClr")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_app_properties_xml(self) -> bytes:
         """
@@ -578,7 +602,7 @@ class PPTXGenerator:
         ET.SubElement(root, "HyperlinksChanged").text = "false"
         ET.SubElement(root, "AppVersion").text = "16.0000"
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_core_properties_xml(self) -> bytes:
         """
@@ -610,7 +634,7 @@ class PPTXGenerator:
                                 attrib={'xsi:type': 'dcterms:W3CDTF'})
         modified.text = now
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_view_props_xml(self) -> bytes:
         """
@@ -627,14 +651,14 @@ class PPTXGenerator:
         grid_spacing = ET.SubElement(root, f"{{{self.NS['p']}}}gridSpacing",
                                     cx="72008", cy="72008")
         
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_pres_props_xml(self) -> bytes:
         """
         Create ppt/presProps.xml - presentation properties.
         """
         root = ET.Element(f"{{{self.NS['p']}}}presentationPr")
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def _create_table_styles_xml(self) -> bytes:
         """
@@ -645,7 +669,7 @@ class PPTXGenerator:
                          attrib={
                              'def': '{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}'
                          })
-        return ET.tostring(root, encoding='utf-8', xml_declaration=True)
+        return self._serialize_xml(root)
     
     def add_slide(self, shapes: List[Dict[str, Any]]) -> None:
         """
