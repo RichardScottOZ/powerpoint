@@ -79,7 +79,7 @@ def create_simple_example():
         ]
     )
     
-    ppt.save("example_presentation.pptx")
+    ppt.save("examples/simple_example.pptx")
 
 
 if __name__ == "__main__":

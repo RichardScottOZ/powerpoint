@@ -61,7 +61,7 @@ def create_overview_presentation():
         ]
     )
     
-    ppt.save("comic_analysis_overview.pptx")
+    ppt.save("examples/comic_analysis_overview.pptx")
 
 
 def create_technical_presentation():
@@ -128,7 +128,7 @@ def create_technical_presentation():
         ]
     )
     
-    ppt.save("comic_analysis_technical.pptx")
+    ppt.save("examples/comic_analysis_technical.pptx")
 
 
 def create_data_insights_presentation():
@@ -184,7 +184,7 @@ def create_data_insights_presentation():
         ]
     )
     
-    ppt.save("comic_analysis_data_insights.pptx")
+    ppt.save("examples/comic_analysis_data_insights.pptx")
 
 
 def create_getting_started_presentation():
@@ -251,7 +251,7 @@ def create_getting_started_presentation():
         ]
     )
     
-    ppt.save("comic_analysis_getting_started.pptx")
+    ppt.save("examples/comic_analysis_getting_started.pptx")
 
 
 def main():

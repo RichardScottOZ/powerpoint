@@ -51,11 +51,28 @@ class CompletePPTXGenerator:
             if prefix not in ['ct', 'rel']:  # Don't register these - they'll be default namespaces
                 ET.register_namespace(prefix, uri)
     
-    def _xml_to_bytes(self, root: ET.Element) -> bytes:
-        """Convert XML element to bytes with proper declaration."""
-        xml_bytes = ET.tostring(root, encoding='utf-8', xml_declaration=False)
+    def _xml_to_bytes(self, root: ET.Element, add_r_namespace: bool = False) -> bytes:
+        """
+        Convert XML element to bytes with proper declaration.
+        
+        Args:
+            root: XML element tree root
+            add_r_namespace: If True, manually adds xmlns:r namespace to root element
+        """
+        xml_str = ET.tostring(root, encoding='utf-8', xml_declaration=False).decode('utf-8')
+        
+        # If we need to add xmlns:r namespace, insert it after the first opening tag
+        if add_r_namespace and '<p:sld' in xml_str:
+            # Find where to insert (after xmlns:p declaration)
+            insert_pos = xml_str.find('"http://schemas.openxmlformats.org/presentationml/2006/main"')
+            if insert_pos > 0:
+                insert_pos += len('"http://schemas.openxmlformats.org/presentationml/2006/main"')
+                xml_str = (xml_str[:insert_pos] + 
+                          ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
+                          xml_str[insert_pos:])
+        
         declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-        return (declaration + xml_bytes.decode('utf-8')).encode('utf-8')
+        return (declaration + xml_str).encode('utf-8')
     
     def _create_content_types(self) -> bytes:
         """Create [Content_Types].xml with default namespace (no prefix)"""
@@ -506,12 +523,8 @@ class CompletePPTXGenerator:
         ET.SubElement(nv_grp_sp_pr, f"{{{self.NS['p']}}}cNvGrpSpPr")
         ET.SubElement(nv_grp_sp_pr, f"{{{self.NS['p']}}}nvPr")
         
-        grp_sp_pr = ET.SubElement(sp_tree, f"{{{self.NS['p']}}}grpSpPr")
-        xfrm = ET.SubElement(grp_sp_pr, f"{{{self.NS['a']}}}xfrm")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}off", x="0", y="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}ext", cx="0", cy="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}chOff", x="0", y="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}chExt", cx="0", cy="0")
+        # Empty grpSpPr (no transform) - match python-pptx behavior
+        ET.SubElement(sp_tree, f"{{{self.NS['p']}}}grpSpPr")
         
         # Add shapes with content
         for idx, shape in enumerate(shapes):
@@ -536,7 +549,7 @@ class CompletePPTXGenerator:
             ET.SubElement(tx_body, f"{{{self.NS['a']}}}bodyPr")
             ET.SubElement(tx_body, f"{{{self.NS['a']}}}lstStyle")
             
-            # Add text content
+            # Add text content - simplified without rPr attributes or endParaRPr
             text_content = shape.get('text', '')
             if isinstance(text_content, str):
                 text_content = [text_content]
@@ -544,15 +557,13 @@ class CompletePPTXGenerator:
             for text_item in text_content:
                 p = ET.SubElement(tx_body, f"{{{self.NS['a']}}}p")
                 r = ET.SubElement(p, f"{{{self.NS['a']}}}r")
-                rPr = ET.SubElement(r, f"{{{self.NS['a']}}}rPr", lang="en-US", dirty="0")
                 ET.SubElement(r, f"{{{self.NS['a']}}}t").text = text_item
-                ET.SubElement(p, f"{{{self.NS['a']}}}endParaRPr", lang="en-US")
         
         # Color map override
         clr_map_ovr = ET.SubElement(root, f"{{{self.NS['p']}}}clrMapOvr")
         ET.SubElement(clr_map_ovr, f"{{{self.NS['a']}}}masterClrMapping")
         
-        return self._xml_to_bytes(root)
+        return self._xml_to_bytes(root, add_r_namespace=True)
     
     def _create_slide_rels(self, slide_num: int, layout_num: int) -> bytes:
         """Create ppt/slides/_rels/slide{n}.xml.rels with default namespace (no prefix)"""
