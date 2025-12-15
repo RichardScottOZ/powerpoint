@@ -395,51 +395,60 @@ class CompletePPTXGenerator:
             layout_name: Human-readable name
             placeholders: List of (ph_type, ph_name, ph_id) tuples
         """
-        root = ET.Element(f"{{{self.NS['p']}}}sldLayout", type=layout_type, preserve="1")
+        # Manually build XML to ensure xmlns:r namespace and proper structure
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         
-        # Common slide data
-        cSld = ET.SubElement(root, f"{{{self.NS['p']}}}cSld", name=layout_name)
-        sp_tree = ET.SubElement(cSld, f"{{{self.NS['p']}}}spTree")
+        # Start with root element including xmlns:r namespace
+        xml = f'<p:sldLayout xmlns:a="{self.NS["a"]}" xmlns:r="{self.NS["r"]}" xmlns:p="{self.NS["p"]}" type="{layout_type}" preserve="1">'
+        xml += f'<p:cSld name="{layout_name}"><p:spTree>'
         
         # Group shape properties
-        nv_grp_sp_pr = ET.SubElement(sp_tree, f"{{{self.NS['p']}}}nvGrpSpPr")
-        ET.SubElement(nv_grp_sp_pr, f"{{{self.NS['p']}}}cNvPr", id="1", name="")
-        ET.SubElement(nv_grp_sp_pr, f"{{{self.NS['p']}}}cNvGrpSpPr")
-        ET.SubElement(nv_grp_sp_pr, f"{{{self.NS['p']}}}nvPr")
+        xml += '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'
+        xml += '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'
         
-        grp_sp_pr = ET.SubElement(sp_tree, f"{{{self.NS['p']}}}grpSpPr")
-        xfrm = ET.SubElement(grp_sp_pr, f"{{{self.NS['a']}}}xfrm")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}off", x="0", y="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}ext", cx="0", cy="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}chOff", x="0", y="0")
-        ET.SubElement(xfrm, f"{{{self.NS['a']}}}chExt", cx="0", cy="0")
-        
-        # Add placeholders
+        # Add placeholders with positioning
         for idx, (ph_type, ph_name, ph_id) in enumerate(placeholders):
-            sp = ET.SubElement(sp_tree, f"{{{self.NS['p']}}}sp")
-            
-            # Non-visual shape properties
-            nv_sp_pr = ET.SubElement(sp, f"{{{self.NS['p']}}}nvSpPr")
-            ET.SubElement(nv_sp_pr, f"{{{self.NS['p']}}}cNvPr", id=str(ph_id), name=ph_name)
-            cnv_sp_pr = ET.SubElement(nv_sp_pr, f"{{{self.NS['p']}}}cNvSpPr")
-            ET.SubElement(cnv_sp_pr, f"{{{self.NS['a']}}}spLocks", noGrp="1")
-            nv_pr = ET.SubElement(nv_sp_pr, f"{{{self.NS['p']}}}nvPr")
-            ph_attrs = {'type': ph_type}
+            ph_attrs_str = f'type="{ph_type}"'
             if idx > 0:
-                ph_attrs['idx'] = str(idx)
-            ET.SubElement(nv_pr, f"{{{self.NS['p']}}}ph", **ph_attrs)
+                ph_attrs_str += f' idx="{idx}"'
             
-            # Shape properties
-            ET.SubElement(sp, f"{{{self.NS['p']}}}spPr")
+            # Define position and size based on placeholder type
+            if ph_type in ['ctrTitle', 'title']:
+                # Title placeholder - centered at top
+                x, y = "685800", "2130425"
+                cx, cy = "7772400", "1470025"
+                placeholder_text = "Click to edit Master title style"
+            elif ph_type == 'subTitle':
+                # Subtitle placeholder - centered below title
+                x, y = "1371600", "3886200"
+                cx, cy = "6400800", "1752600"
+                placeholder_text = "Click to edit Master subtitle style"
+            elif ph_type == 'body':
+                # Body placeholder - main content area
+                x, y = "457200", "1600200"
+                cx, cy = "8229600", "4525963"
+                placeholder_text = "Click to edit Master text styles"
+            else:
+                # Default positioning
+                x, y = "457200", "1600200"
+                cx, cy = "8229600", "4525963"
+                placeholder_text = "Click to edit placeholder"
             
-            # Text body
-            tx_body = ET.SubElement(sp, f"{{{self.NS['p']}}}txBody")
-            ET.SubElement(tx_body, f"{{{self.NS['a']}}}bodyPr")
-            ET.SubElement(tx_body, f"{{{self.NS['a']}}}lstStyle")
-            p = ET.SubElement(tx_body, f"{{{self.NS['a']}}}p")
-            end_para_rpr = ET.SubElement(p, f"{{{self.NS['a']}}}endParaRPr", lang="en-US")
+            xml += '<p:sp>'
+            xml += f'<p:nvSpPr><p:cNvPr id="{ph_id}" name="{ph_name}"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph {ph_attrs_str}/></p:nvPr></p:nvSpPr>'
+            
+            # Add position and size to shape properties
+            xml += f'<p:spPr><a:xfrm><a:off x="{x}" y="{y}"/><a:ext cx="{cx}" cy="{cy}"/></a:xfrm></p:spPr>'
+            
+            # Text body with placeholder text
+            xml += '<p:txBody><a:bodyPr/><a:lstStyle/><a:p>'
+            xml += f'<a:r><a:rPr lang="en-US" smtClean="0"/><a:t>{placeholder_text}</a:t></a:r>'
+            xml += '<a:endParaRPr lang="en-US"/></a:p></p:txBody>'
+            xml += '</p:sp>'
         
-        return self._xml_to_bytes(root)
+        xml += '</p:spTree></p:cSld></p:sldLayout>'
+        
+        return (declaration + xml).encode('utf-8')
     
     def _create_slide_layout_rels(self, layout_num: int) -> bytes:
         """Create ppt/slideLayouts/_rels/slideLayout{n}.xml.rels with default namespace (no prefix)"""
