@@ -2,10 +2,10 @@
 Comic Analysis Repository Presenter
 
 Creates PowerPoint presentations about the Comic-Analysis repository
-using the from-scratch XML-based PowerPoint generator.
+using the working PowerPoint generator.
 """
 
-from pptx_generator import PPTXGenerator
+from pptx_generator_working import PPTXGeneratorWorking as PPTXGenerator
 
 
 def create_overview_presentation():

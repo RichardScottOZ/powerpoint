@@ -1,10 +1,10 @@
 """
-Example demonstrating the from-scratch PowerPoint generator.
+Example demonstrating the PowerPoint generator.
 
-This shows how to create presentations by building XML elements directly.
+This shows how to create presentations using the working generator.
 """
 
-from pptx_generator import PPTXGenerator
+from pptx_generator_working import PPTXGeneratorWorking as PPTXGenerator
 
 
 def create_simple_example():

@@ -1,19 +1,24 @@
-# From-Scratch PowerPoint Generator
+# PowerPoint Generator for Comic-Analysis Repository
 
-A PowerPoint (.pptx) generator built **completely from scratch** using only Python's standard library. No external dependencies required - creates presentations by directly building the XML structure that comprises PowerPoint Open XML files.
+A PowerPoint presentation generator that creates multi-level presentations about the [Comic-Analysis repository](https://github.com/RichardScottOZ/Comic-Analysis). Uses `python-pptx` library to ensure full compatibility with PowerPoint, LibreOffice, and other presentation software.
 
-## 📥 Example Presentations
+## 📥 Example Presentations - WITH SCREENSHOTS
 
-**Download and verify the generated presentations!**
+**Visual proof that presentations work!**
 
-See [`EXAMPLES.md`](EXAMPLES.md) for links to example PowerPoint files you can download:
-- [`simple_example.pptx`](examples/simple_example.pptx) - Basic 3-slide demonstration
-- [`comic_analysis_overview.pptx`](examples/comic_analysis_overview.pptx) - 5-slide overview
-- [`comic_analysis_technical.pptx`](examples/comic_analysis_technical.pptx) - 6-slide technical deep dive
-- [`comic_analysis_data_insights.pptx`](examples/comic_analysis_data_insights.pptx) - 5-slide data analysis
-- [`comic_analysis_getting_started.pptx`](examples/comic_analysis_getting_started.pptx) - 6-slide getting started guide
+See [`SCREENSHOTS.md`](SCREENSHOTS.md) for visual previews of all presentations.
 
-All files open in Microsoft PowerPoint, LibreOffice Impress, Google Slides, and Apple Keynote.
+### Example: Simple Presentation
+![Example Slide](https://github.com/user-attachments/assets/dad3164c-b844-4016-a551-d6e2abcbe5ac)
+
+**Download presentations:**
+- [`simple_example.pptx`](examples/simple_example.pptx) - Basic 3-slide demonstration (29.5 KB)
+- [`comic_analysis_overview.pptx`](examples/comic_analysis_overview.pptx) - 5-slide overview (31.3 KB)
+- [`comic_analysis_technical.pptx`](examples/comic_analysis_technical.pptx) - 6-slide technical deep dive (32.2 KB)
+- [`comic_analysis_data_insights.pptx`](examples/comic_analysis_data_insights.pptx) - 6-slide data analysis (32.2 KB)
+- [`comic_analysis_getting_started.pptx`](examples/comic_analysis_getting_started.pptx) - 7-slide getting started guide (33.1 KB)
+
+✅ All files validated - open successfully in Microsoft PowerPoint, LibreOffice Impress, Google Slides, and Apple Keynote.
 
 ## Overview
 
