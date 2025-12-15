@@ -46,9 +46,10 @@ class CompletePPTXGenerator:
         self.slides = []
         self.slide_counter = 0
         
-        # Register namespaces
+        # Register namespaces - but NOT the ones that should be default (ct and rel)
         for prefix, uri in self.NS.items():
-            ET.register_namespace(prefix, uri)
+            if prefix not in ['ct', 'rel']:  # Don't register these - they'll be default namespaces
+                ET.register_namespace(prefix, uri)
     
     def _xml_to_bytes(self, root: ET.Element) -> bytes:
         """Convert XML element to bytes with proper declaration."""
@@ -57,8 +58,10 @@ class CompletePPTXGenerator:
         return (declaration + xml_bytes.decode('utf-8')).encode('utf-8')
     
     def _create_content_types(self) -> bytes:
-        """Create [Content_Types].xml"""
-        root = ET.Element(f"{{{self.NS['ct']}}}Types")
+        """Create [Content_Types].xml with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml_parts = ['<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">']
         
         # Default types
         for ext, ctype in [
@@ -66,7 +69,7 @@ class CompletePPTXGenerator:
             ('xml', 'application/xml'),
             ('jpeg', 'image/jpeg'),
         ]:
-            ET.SubElement(root, f"{{{self.NS['ct']}}}Default", Extension=ext, ContentType=ctype)
+            xml_parts.append(f'<Default Extension="{ext}" ContentType="{ctype}"/>')
         
         # Override types
         overrides = [
@@ -91,13 +94,17 @@ class CompletePPTXGenerator:
                             'application/vnd.openxmlformats-officedocument.presentationml.slide+xml'))
         
         for part_name, ctype in overrides:
-            ET.SubElement(root, f"{{{self.NS['ct']}}}Override", PartName=part_name, ContentType=ctype)
+            xml_parts.append(f'<Override PartName="{part_name}" ContentType="{ctype}"/>')
         
-        return self._xml_to_bytes(root)
+        xml_parts.append('</Types>')
+        
+        return (declaration + ''.join(xml_parts)).encode('utf-8')
     
     def _create_package_rels(self) -> bytes:
-        """Create _rels/.rels"""
-        root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
+        """Create _rels/.rels with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
         rels = [
             ('rId1', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument', 'ppt/presentation.xml'),
@@ -106,10 +113,10 @@ class CompletePPTXGenerator:
         ]
         
         for rid, rtype, target in rels:
-            ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship", 
-                         Id=rid, Type=rtype, Target=target)
+            xml_parts.append(f'<Relationship Id="{rid}" Type="{rtype}" Target="{target}"/>')
         
-        return self._xml_to_bytes(root)
+        xml_parts.append('</Relationships>')
+        return (declaration + ''.join(xml_parts)).encode('utf-8')
     
     def _create_core_props(self) -> bytes:
         """Create docProps/core.xml"""
@@ -193,8 +200,10 @@ class CompletePPTXGenerator:
         return self._xml_to_bytes(root)
     
     def _create_presentation_rels(self) -> bytes:
-        """Create ppt/_rels/presentation.xml.rels"""
-        root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
+        """Create ppt/_rels/presentation.xml.rels with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
         # Relationships
         rels = [
@@ -210,10 +219,10 @@ class CompletePPTXGenerator:
                         f'slides/slide{i+1}.xml'))
         
         for rid, rtype, target in rels:
-            ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
-                         Id=rid, Type=rtype, Target=target)
+            xml_parts.append(f'<Relationship Id="{rid}" Type="{rtype}" Target="{target}"/>')
         
-        return self._xml_to_bytes(root)
+        xml_parts.append('</Relationships>')
+        return (declaration + ''.join(xml_parts)).encode('utf-8')
     
     def _create_pres_props(self) -> bytes:
         """Create ppt/presProps.xml"""
@@ -337,22 +346,20 @@ class CompletePPTXGenerator:
         return self._xml_to_bytes(root)
     
     def _create_slide_master_rels(self) -> bytes:
-        """Create ppt/slideMasters/_rels/slideMaster1.xml.rels"""
-        root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
-        
-        # Theme relationship
-        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
-                     Id="rId12", Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-                     Target="../theme/theme1.xml")
+        """Create ppt/slideMasters/_rels/slideMaster1.xml.rels with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
         # Layout relationships
         for i in range(1, 12):
-            ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
-                         Id=f"rId{i}",
-                         Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-                         Target=f"../slideLayouts/slideLayout{i}.xml")
+            xml_parts.append(f'<Relationship Id="rId{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout{i}.xml"/>')
         
-        return self._xml_to_bytes(root)
+        # Theme relationship
+        xml_parts.append('<Relationship Id="rId12" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/>')
+        
+        xml_parts.append('</Relationships>')
+        return (declaration + ''.join(xml_parts)).encode('utf-8')
     
     def _create_slide_layout(self, layout_num: int, layout_type: str, layout_name: str,
                             placeholders: List[Tuple[str, str, int]]) -> bytes:
@@ -412,13 +419,13 @@ class CompletePPTXGenerator:
         return self._xml_to_bytes(root)
     
     def _create_slide_layout_rels(self, layout_num: int) -> bytes:
-        """Create ppt/slideLayouts/_rels/slideLayout{n}.xml.rels"""
-        root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
-        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
-                     Id="rId1",
-                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
-                     Target="../slideMasters/slideMaster1.xml")
-        return self._xml_to_bytes(root)
+        """Create ppt/slideLayouts/_rels/slideLayout{n}.xml.rels with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        xml += '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>'
+        xml += '</Relationships>'
+        return (declaration + xml).encode('utf-8')
     
     def _create_all_slide_layouts(self) -> Dict[str, bytes]:
         """Create all 11 standard slide layouts"""
@@ -548,13 +555,13 @@ class CompletePPTXGenerator:
         return self._xml_to_bytes(root)
     
     def _create_slide_rels(self, slide_num: int, layout_num: int) -> bytes:
-        """Create ppt/slides/_rels/slide{n}.xml.rels"""
-        root = ET.Element(f"{{{self.NS['rel']}}}Relationships")
-        ET.SubElement(root, f"{{{self.NS['rel']}}}Relationship",
-                     Id="rId1",
-                     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-                     Target=f"../slideLayouts/slideLayout{layout_num}.xml")
-        return self._xml_to_bytes(root)
+        """Create ppt/slides/_rels/slide{n}.xml.rels with default namespace (no prefix)"""
+        # Manually construct XML to avoid namespace prefix issues
+        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        xml = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        xml += f'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout{layout_num}.xml"/>'
+        xml += '</Relationships>'
+        return (declaration + xml).encode('utf-8')
     
     def add_title_slide(self, title: str, subtitle: str = ""):
         """Add a title slide"""
