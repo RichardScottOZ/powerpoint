@@ -71,13 +71,13 @@ class CompletePPTXGenerator:
                           ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
                           xml_str[insert_pos:])
         
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         return (declaration + xml_str).encode('utf-8')
     
     def _create_content_types(self) -> bytes:
         """Create [Content_Types].xml with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml_parts = ['<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">']
         
         # Default types
@@ -120,7 +120,7 @@ class CompletePPTXGenerator:
     def _create_package_rels(self) -> bytes:
         """Create _rels/.rels with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
         rels = [
@@ -219,20 +219,26 @@ class CompletePPTXGenerator:
     def _create_presentation_rels(self) -> bytes:
         """Create ppt/_rels/presentation.xml.rels with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
-        # Relationships
+        # Build relationships with correct rId numbering
         rels = [
             ('rId1', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster', 'slideMasters/slideMaster1.xml'),
-            ('rId4', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps', 'presProps.xml'),
-            ('rId5', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps', 'viewProps.xml'),
-            ('rId6', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles', 'tableStyles.xml'),
         ]
         
-        # Add slide relationships
+        # Calculate next rId based on number of slides
+        next_rid = 2 + len(self.slides)
+        
+        rels.extend([
+            (f'rId{next_rid}', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps', 'presProps.xml'),
+            (f'rId{next_rid+1}', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps', 'viewProps.xml'),
+            (f'rId{next_rid+2}', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles', 'tableStyles.xml'),
+        ])
+        
+        # Add slide relationships (rId2, rId3, rId4, ...)
         for i in range(len(self.slides)):
-            rels.append((f'rId{i+2}', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide', 
+            rels.insert(i+1, (f'rId{i+2}', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide', 
                         f'slides/slide{i+1}.xml'))
         
         for rid, rtype, target in rels:
@@ -365,7 +371,7 @@ class CompletePPTXGenerator:
     def _create_slide_master_rels(self) -> bytes:
         """Create ppt/slideMasters/_rels/slideMaster1.xml.rels with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml_parts = ['<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">']
         
         # Layout relationships
@@ -438,7 +444,7 @@ class CompletePPTXGenerator:
     def _create_slide_layout_rels(self, layout_num: int) -> bytes:
         """Create ppt/slideLayouts/_rels/slideLayout{n}.xml.rels with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         xml += '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/>'
         xml += '</Relationships>'
@@ -568,7 +574,7 @@ class CompletePPTXGenerator:
     def _create_slide_rels(self, slide_num: int, layout_num: int) -> bytes:
         """Create ppt/slides/_rels/slide{n}.xml.rels with default namespace (no prefix)"""
         # Manually construct XML to avoid namespace prefix issues
-        declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+        declaration = "<?xml version='1.0' encoding='UTF-8' standalone='yes'?>\n"
         xml = '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
         xml += f'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout{layout_num}.xml"/>'
         xml += '</Relationships>'
