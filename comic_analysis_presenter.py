@@ -5,7 +5,7 @@ Creates PowerPoint presentations about the Comic-Analysis repository
 using the working PowerPoint generator.
 """
 
-from pptx_generator_working import PPTXGeneratorWorking as PPTXGenerator
+from pptx_generator_complete import CompletePPTXGenerator as PPTXGenerator
 
 
 def create_overview_presentation():

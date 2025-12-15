@@ -9,7 +9,7 @@ import os
 import unittest
 import zipfile
 import xml.etree.ElementTree as ET
-from pptx_generator_working import PPTXGeneratorWorking as PPTXGenerator
+from pptx_generator_complete import CompletePPTXGenerator as PPTXGenerator
 import comic_analysis_presenter
 from pptx import Presentation
 

@@ -71,7 +71,7 @@ def create_simple_example():
     ppt.add_content_slide(
         "Usage Example",
         [
-            "from pptx_generator import PPTXGenerator",
+            "from pptx_generator_complete import CompletePPTXGenerator as PPTXGenerator",
             "ppt = PPTXGenerator()",
             "ppt.add_title_slide('Title', 'Subtitle')",
             "ppt.add_content_slide('Topic', ['Point 1', 'Point 2'])",
