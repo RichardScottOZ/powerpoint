@@ -205,3 +205,9 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Generated PowerPoint files (exclude root level, but keep examples)
+/*.pptx
+
+# Keep example presentations
+!examples/*.pptx
